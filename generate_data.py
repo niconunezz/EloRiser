@@ -17,13 +17,16 @@ chess_ids= {
     "p": 11   # Peón negro
 }
 reversed_chess_ids = {v:i for i,v in chess_ids.items()}
-score = {"1-0":1,"1/2-1/2":0,"0-1":-1}
+score = {"1-0":0,"1/2-1/2":1,"0-1":2}
 def extract_boards_information(path):
     boards = []
     res = []
     with open(path) as pgn:
         while True:
-            game = chess.pgn.read_game(pgn)
+            try:
+                game = chess.pgn.read_game(pgn)
+            except UnicodeDecodeError:
+                continue
             if not game:
                 break
             out = game.headers['Result']
@@ -34,7 +37,9 @@ def extract_boards_information(path):
             for move in game.mainline_moves():
                 board.push(move)
                 boards.append(board)
-                res.append(result)
+                array = [0 for i in range(3)]
+                array[result]=1
+                res.append(array)
     return boards,res
 def get_x_data(board):
     row = [0 for i in range(64)]
@@ -58,27 +63,45 @@ def get_xy_data(boards,res):
     return x,y
 
 
-def get_data(data):
+def get_data(data,iteration=1,train=True):
     x_data = []
     y_data = []
     i=0
     for f in data:
-        path = f'data/{f}'
+        if train:
+            path = f'data/train_data/train_data_{iteration}/{f}'
+        else:
+            path = f'data/test_data/{f}'
+        
         boards,res = extract_boards_information(path)
         x,y = get_xy_data(boards,res)
         x_data.extend(x)
         y_data.extend(y)
         i+=1
-        print(f"{i}/{len(data)}")
-        break
+        print(f"We are at {i}/{len(data)}")
     x_data = np.array(x_data)
     y_data = np.array(y_data)
     return x_data,y_data
 
-def generate():
-    data = os.listdir("data")
-    x,y = get_data(data)
+def generate(idx,train=True):
+    if train:
+        data = os.listdir(f"data/train_data/train_data_{idx}")
+    else:
+        data = os.listdir("data/test_data")
+    x,y = get_data(data,idx,train)
     return x,y
+
+def get_all_files(iterations):
+    for i in range(iterations):
+        x,y = generate(str(i+1))
+        save_train_data(x,y,i+1)
+        print(f"Stored {i+1}/{iterations}")
+
+def save_test_data(x,y):
+    np.savez_compressed('data/dataset/test/test_data.npz', x=x, y=y)
+def save_train_data(x,y,iteration):
+    np.savez_compressed(f'data/dataset/train/train_data_{str(iteration)}.npz', x=x, y=y)
+
 
 def reverse(x):
     board = chess.Board()
