@@ -1,5 +1,7 @@
 # EloRiser
-![Chess AI](C:\Users\nicod\OneDrive\Escritorio\Coding\EloRiser\assets\training_loss.PNG)
+<p align="center">
+  <img src="assets\training_loss.PNG" width="400" height="300" alt="Loss">
+</p>
 
 # Chess AI with Convolutional Neural Networks
 
